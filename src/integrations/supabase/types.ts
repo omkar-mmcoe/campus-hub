@@ -14,7 +14,400 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      evm_attendance_records: {
+        Row: {
+          checked_in_at: string
+          created_at: string
+          event_id: string
+          id: string
+          session_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          checked_in_at?: string
+          created_at?: string
+          event_id: string
+          id?: string
+          session_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          checked_in_at?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+          session_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_attendance_records_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "evm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evm_attendance_records_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "evm_attendance_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evm_attendance_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_attendance_sessions: {
+        Row: {
+          created_at: string
+          created_by: string
+          ended_at: string | null
+          event_id: string
+          id: string
+          qr_code_data: string | null
+          qr_code_generated_at: string | null
+          session_code: string
+          started_at: string | null
+          status: string
+          title: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          ended_at?: string | null
+          event_id: string
+          id?: string
+          qr_code_data?: string | null
+          qr_code_generated_at?: string | null
+          session_code: string
+          started_at?: string | null
+          status?: string
+          title?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          ended_at?: string | null
+          event_id?: string
+          id?: string
+          qr_code_data?: string | null
+          qr_code_generated_at?: string | null
+          session_code?: string
+          started_at?: string | null
+          status?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_attendance_sessions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evm_attendance_sessions_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "evm_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_event_agenda: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          speaker_name: string | null
+          start_time: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          speaker_name?: string | null
+          start_time?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          speaker_name?: string | null
+          start_time?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_event_agenda_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "evm_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_events: {
+        Row: {
+          average_rating: number
+          banner_url: string | null
+          created_at: string
+          description: string | null
+          end_time: string
+          event_type: string
+          id: string
+          location_city: string | null
+          max_participants: number | null
+          organizer_id: string
+          poster_url: string | null
+          published_at: string | null
+          registration_fee: number
+          start_time: string
+          status: string
+          tagline: string | null
+          title: string
+          total_registrations: number
+          venue: string
+        }
+        Insert: {
+          average_rating?: number
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_type?: string
+          id?: string
+          location_city?: string | null
+          max_participants?: number | null
+          organizer_id: string
+          poster_url?: string | null
+          published_at?: string | null
+          registration_fee?: number
+          start_time?: string
+          status?: string
+          tagline?: string | null
+          title: string
+          total_registrations?: number
+          venue?: string
+        }
+        Update: {
+          average_rating?: number
+          banner_url?: string | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_type?: string
+          id?: string
+          location_city?: string | null
+          max_participants?: number | null
+          organizer_id?: string
+          poster_url?: string | null
+          published_at?: string | null
+          registration_fee?: number
+          start_time?: string
+          status?: string
+          tagline?: string | null
+          title?: string
+          total_registrations?: number
+          venue?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string | null
+          read_at: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string | null
+          read_at?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_registrations: {
+        Row: {
+          checked_in: boolean
+          created_at: string
+          event_id: string
+          id: string
+          qr_code: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          checked_in?: boolean
+          created_at?: string
+          event_id: string
+          id?: string
+          qr_code?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          checked_in?: boolean
+          created_at?: string
+          event_id?: string
+          id?: string
+          qr_code?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_registrations_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "evm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evm_registrations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          event_id: string
+          id: string
+          is_hidden: boolean
+          organizer_rating: number
+          rating: number
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          event_id: string
+          id?: string
+          is_hidden?: boolean
+          organizer_rating?: number
+          rating?: number
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          event_id?: string
+          id?: string
+          is_hidden?: boolean
+          organizer_rating?: number
+          rating?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evm_reviews_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "evm_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evm_reviews_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "evm_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evm_users: {
+        Row: {
+          avatar_url: string | null
+          college_name: string | null
+          created_at: string
+          department: string | null
+          email: string | null
+          id: string
+          interests: string[]
+          name: string | null
+          onboarding_complete: boolean
+          role: string
+          roll_number: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          college_name?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          id: string
+          interests?: string[]
+          name?: string | null
+          onboarding_complete?: boolean
+          role?: string
+          roll_number?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          college_name?: string | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          id?: string
+          interests?: string[]
+          name?: string | null
+          onboarding_complete?: boolean
+          role?: string
+          roll_number?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
