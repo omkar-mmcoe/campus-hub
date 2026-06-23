@@ -68,7 +68,7 @@ function AuthPage() {
       </header>
 
       <main className="mx-auto flex max-w-md flex-col px-6 py-12 lg:py-20">
-        <div className="label-eyebrow">Campus OS</div>
+        {/* <div className="label-eyebrow">Campus OS</div> */}
         <h1 className="mt-2 font-heading text-3xl font-bold tracking-tight lg:text-4xl">
           {mode === "signin" ? "Welcome back" : "Create your account"}
         </h1>

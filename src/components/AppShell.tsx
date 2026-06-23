@@ -23,7 +23,8 @@ const NAV: { to: string; label: string; icon: string }[] = [
   { to: "/tickets", label: "My tickets", icon: "confirmation_number" },
   { to: "/attendance", label: "Attendance", icon: "qr_code_scanner" },
   { to: "/notifications", label: "Notifications", icon: "notifications" },
-  { to: "/review", label: "Reviews", icon: "reviews" },
+  { to: "/certificates", label: "Certificates", icon: "description" },
+  { to: "/review", label: "Reviews", icon: "reviews" }
 ];
 
 export function AppShell({ title, children }: { title: string; children: ReactNode }) {
@@ -90,7 +91,7 @@ export function AppShell({ title, children }: { title: string; children: ReactNo
       </aside>
 
       {/* Mobile top bar */}
-      <div className="flex flex-col">
+      <div className="flex flex-col sticky top-0 z-30 ">
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-surface px-4 py-3 lg:hidden">
           <Link to="/" className="flex items-center gap-2">
             <div className="grid h-8 w-8 place-items-center rounded-md bg-primary text-primary-foreground">

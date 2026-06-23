@@ -87,7 +87,7 @@ function Welcome() {
         </section>
 
         <section className="flex flex-col justify-center">
-          <div className="label-eyebrow">Campus OS</div>
+          {/* <div className="label-eyebrow">Campus OS</div> */}
           <h1 className="mt-3 font-heading text-4xl font-bold leading-tight tracking-tight lg:text-5xl">
             Welcome to Eventra
           </h1>

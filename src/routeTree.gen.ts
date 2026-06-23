@@ -21,6 +21,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCreateRouteImport } from './routes/_authenticated/create'
+import { Route as AuthenticatedCertificatesRouteImport } from './routes/_authenticated/certificates'
 import { Route as AuthenticatedAttendanceRouteImport } from './routes/_authenticated/attendance'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -83,6 +84,12 @@ const AuthenticatedCreateRoute = AuthenticatedCreateRouteImport.update({
   path: '/create',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCertificatesRoute =
+  AuthenticatedCertificatesRouteImport.update({
+    id: '/certificates',
+    path: '/certificates',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAttendanceRoute = AuthenticatedAttendanceRouteImport.update({
   id: '/attendance',
   path: '/attendance',
@@ -95,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
+  '/certificates': typeof AuthenticatedCertificatesRoute
   '/create': typeof AuthenticatedCreateRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/attendance': typeof AuthenticatedAttendanceRoute
+  '/certificates': typeof AuthenticatedCertificatesRoute
   '/create': typeof AuthenticatedCreateRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/notifications': typeof AuthenticatedNotificationsRoute
@@ -125,6 +134,7 @@ export interface FileRoutesById {
   '/explore': typeof ExploreRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/attendance': typeof AuthenticatedAttendanceRoute
+  '/_authenticated/certificates': typeof AuthenticatedCertificatesRoute
   '/_authenticated/create': typeof AuthenticatedCreateRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
@@ -141,6 +151,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/attendance'
+    | '/certificates'
     | '/create'
     | '/dashboard'
     | '/notifications'
@@ -155,6 +166,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/attendance'
+    | '/certificates'
     | '/create'
     | '/dashboard'
     | '/notifications'
@@ -170,6 +182,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sitemap.xml'
     | '/_authenticated/attendance'
+    | '/_authenticated/certificates'
     | '/_authenticated/create'
     | '/_authenticated/dashboard'
     | '/_authenticated/notifications'
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCreateRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/certificates': {
+      id: '/_authenticated/certificates'
+      path: '/certificates'
+      fullPath: '/certificates'
+      preLoaderRoute: typeof AuthenticatedCertificatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/attendance': {
       id: '/_authenticated/attendance'
       path: '/attendance'
@@ -286,6 +306,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAttendanceRoute: typeof AuthenticatedAttendanceRoute
+  AuthenticatedCertificatesRoute: typeof AuthenticatedCertificatesRoute
   AuthenticatedCreateRoute: typeof AuthenticatedCreateRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
@@ -296,6 +317,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAttendanceRoute: AuthenticatedAttendanceRoute,
+  AuthenticatedCertificatesRoute: AuthenticatedCertificatesRoute,
   AuthenticatedCreateRoute: AuthenticatedCreateRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
@@ -318,3 +340,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
