@@ -32,11 +32,12 @@ type CertificateData = {
   email: string;
   department: string | null;
   roll_number: string | null;
+  college_name: string | null;
   checked_in: boolean;
   registered_at: string;
 };
 
-type CertificateTemplate = "minimal" | "premium" | "modern";
+type CertificateTemplate = "elegant" | "gold" | "modern";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -45,7 +46,7 @@ function Certificates() {
   const qc = useQueryClient();
 
   const [selectedEventId, setSelectedEventId] = useState<string>("");
-  const [template, setTemplate] = useState<CertificateTemplate>("premium");
+  const [template, setTemplate] = useState<CertificateTemplate>("elegant");
   const [includeAttendedOnly, setIncludeAttendedOnly] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [generating, setGenerating] = useState(false);
@@ -175,24 +176,21 @@ function Certificates() {
   // ── Generate certificate as image with high quality ──────────────────────
   const captureCertificate = async (element: HTMLDivElement): Promise<string> => {
     try {
-      // Ensure element is visible and rendered
       element.style.display = 'block';
       element.style.visibility = 'visible';
       element.style.opacity = '1';
       
-      // Wait for render
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(element, {
         scale: 3,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: template === "minimal" ? '#FAFAF8' : '#FFFFFF',
+        backgroundColor: '#FFFFFF',
         logging: false,
-        width: 800,
-        height: 565,
+        width: 900,
+        height: 636,
         onclone: (clonedDoc) => {
-          // Ensure all text is visible in the cloned document
           const allElements = clonedDoc.querySelectorAll('*');
           allElements.forEach((el) => {
             const style = (el as HTMLElement).style;
@@ -237,7 +235,6 @@ function Certificates() {
     toast.info(`Generating ${selected.length} certificates...`);
 
     try {
-      // Force re-render of all certificates
       setCertificatesReady(false);
       await new Promise((resolve) => setTimeout(resolve, 300));
       setCertificatesReady(true);
@@ -248,7 +245,6 @@ function Certificates() {
       let successCount = 0;
       const failedStudents: string[] = [];
 
-      // Generate certificates one by one with progress tracking
       for (let i = 0; i < selected.length; i++) {
         const student = selected[i];
         const element = certRefs.current.get(student.id);
@@ -261,29 +257,21 @@ function Certificates() {
         }
 
         try {
-          // Make sure element is visible
           element.style.display = 'block';
           element.style.visibility = 'visible';
           element.style.opacity = '1';
           
-          // Capture certificate as PNG
           const imgData = await captureCertificate(element);
-          
-          // Extract base64 data
           const base64Data = imgData.split(',')[1];
           
-          // Create filename with sanitized name
           const sanitizedName = student.name.replace(/[^a-zA-Z0-9]/g, '_');
           const filename = `${sanitizedName}_${student.id.slice(0, 8)}.png`;
           
-          // Add to ZIP
           certificatesFolder?.file(filename, base64Data, { base64: true });
           successCount++;
           
-          // Update progress
           setGenerationProgress(i + 1);
           
-          // Small delay to prevent UI freezing
           if (i % 3 === 0) {
             await new Promise((resolve) => setTimeout(resolve, 50));
           }
@@ -298,7 +286,6 @@ function Certificates() {
         throw new Error("No certificates could be generated");
       }
 
-      // Generate the ZIP file
       const zipBlob = await zip.generateAsync({ 
         type: "blob",
         compression: "DEFLATE",
@@ -307,11 +294,9 @@ function Certificates() {
         }
       });
 
-      // Download the ZIP file
       const eventName = event.title.replace(/[^a-zA-Z0-9]/g, '_');
       saveAs(zipBlob, `certificates_${eventName}_${new Date().toISOString().split('T')[0]}.zip`);
 
-      // Show success message with details
       let message = `Successfully generated ${successCount} of ${selected.length} certificates`;
       if (failedStudents.length > 0) {
         message += `. Failed: ${failedStudents.join(', ')}`;
@@ -332,7 +317,7 @@ function Certificates() {
     }
   };
 
-  // ── Generate and download as Single PDF (Alternative) ──────────────────
+  // ── Generate and download as Single PDF ──────────────────────────────────
   const generateAsPDF = async () => {
     const selected = registrations.filter((s) => selectedStudents.has(s.id));
     if (selected.length === 0) {
@@ -352,7 +337,6 @@ function Certificates() {
       const event = events.find((e) => e.id === selectedEventId);
       if (!event) throw new Error("Event not found");
 
-      // Force re-render
       setCertificatesReady(false);
       await new Promise((resolve) => setTimeout(resolve, 300));
       setCertificatesReady(true);
@@ -376,7 +360,6 @@ function Certificates() {
         }
 
         try {
-          // Make sure element is visible
           element.style.display = 'block';
           element.style.visibility = 'visible';
           element.style.opacity = '1';
@@ -385,10 +368,10 @@ function Certificates() {
             scale: 2,
             useCORS: true,
             allowTaint: true,
-            backgroundColor: template === "minimal" ? "#FAFAF8" : "#FFFFFF",
+            backgroundColor: '#FFFFFF',
             logging: false,
-            width: 800,
-            height: 565,
+            width: 900,
+            height: 636,
           });
           
           const imgData = canvas.toDataURL("image/png", 1.0);
@@ -396,7 +379,6 @@ function Certificates() {
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = pdf.internal.pageSize.getHeight();
           
-          // Calculate dimensions to fit on page
           const imgAspect = canvas.width / canvas.height;
           let imgWidth = pdfWidth - 20;
           let imgHeight = imgWidth / imgAspect;
@@ -412,7 +394,6 @@ function Certificates() {
           if (i > 0) pdf.addPage();
           pdf.addImage(imgData, "PNG", imgX, imgY, imgWidth, imgHeight);
 
-          // Add certificate ID at bottom
           pdf.setFontSize(8);
           pdf.setTextColor(150, 150, 150);
           const certId = `CERT-${event.id.slice(0, 4)}-${student.id.slice(0, 6)}`;
@@ -428,7 +409,6 @@ function Certificates() {
         throw new Error("No certificates could be generated");
       }
 
-      // Save PDF
       const blob = pdf.output("blob");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -529,24 +509,24 @@ function Certificates() {
               <label className="label-eyebrow">Template</label>
               <div className="mt-1 flex gap-2">
                 <button
-                  onClick={() => setTemplate("minimal")}
+                  onClick={() => setTemplate("elegant")}
                   className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                    template === "minimal"
+                    template === "elegant"
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-surface hover:bg-surface-secondary"
                   }`}
                 >
-                  Minimal
+                  Elegant
                 </button>
                 <button
-                  onClick={() => setTemplate("premium")}
+                  onClick={() => setTemplate("gold")}
                   className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium transition-colors ${
-                    template === "premium"
+                    template === "gold"
                       ? "border-primary bg-primary text-primary-foreground"
                       : "border-border bg-surface hover:bg-surface-secondary"
                   }`}
                 >
-                  Premium
+                  Gold
                 </button>
                 <button
                   onClick={() => setTemplate("modern")}
@@ -688,7 +668,7 @@ function Certificates() {
                 </span>
               )}
             </div>
-            <div className="flex items-center justify-center p-4 bg-surface-secondary/50 min-h-[400px]">
+            <div className="flex items-center justify-center p-4 bg-surface-secondary/50 min-h-[420px]">
               {previewStudent ? (
                 <div 
                   ref={(el) => {
@@ -721,8 +701,8 @@ function Certificates() {
             position: 'fixed', 
             left: '-9999px', 
             top: '0',
-            width: '800px',
-            height: '565px',
+            width: '900px',
+            height: '636px',
             overflow: 'hidden',
             pointerEvents: 'none',
             opacity: 0,
@@ -742,8 +722,8 @@ function Certificates() {
                 display: 'block', 
                 visibility: 'visible',
                 opacity: 1,
-                width: '800px',
-                height: '565px'
+                width: '900px',
+                height: '636px'
               }}
             >
               <CertificateTemplate
@@ -778,75 +758,217 @@ const CertificateTemplate = ({
     day: 'numeric'
   });
 
-  if (template === "minimal") {
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // ─── ELEGANT TEMPLATE ──────────────────────────────────────────────────────
+  if (template === "elegant") {
     return (
       <div style={{
-        width: '800px',
-        height: '565px',
-        backgroundColor: '#FAFAF8',
-        borderRadius: '8px',
-        border: '1px solid #E5E7EB',
+        width: '900px',
+        height: '636px',
+        backgroundColor: '#FBF9F6',
+        borderRadius: '12px',
+        border: '1px solid #E5E0D8',
         overflow: 'hidden',
         position: 'relative',
         display: 'flex',
         flexDirection: 'column',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: '"Georgia", "Times New Roman", serif',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
       }}>
-        <div style={{ height: '4px', backgroundColor: '#111827' }} />
+        {/* Decorative inner border */}
+        <div style={{
+          position: 'absolute',
+          inset: '12px',
+          border: '2px solid #D4C9B8',
+          borderRadius: '8px',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{
+          position: 'absolute',
+          inset: '18px',
+          border: '1px solid #E8E2D8',
+          borderRadius: '4px',
+          pointerEvents: 'none'
+        }} />
 
+        {/* Top decorative bar */}
+        <div style={{
+          height: '6px',
+          background: 'linear-gradient(to right, #8B7A5E, #C4A87C, #8B7A5E)',
+          position: 'relative',
+          zIndex: 1
+        }} />
+
+        {/* Main content */}
         <div style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 60px',
-          textAlign: 'center'
+          padding: '30px 50px 25px',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <div style={{ width: '60px', height: '1px', backgroundColor: '#111827', opacity: 0.3, marginBottom: '16px' }} />
+          {/* Decorative corners */}
+          <div style={{
+            position: 'absolute',
+            top: '30px',
+            left: '30px',
+            width: '36px',
+            height: '36px',
+            borderTop: '2px solid #C4A87C',
+            borderLeft: '2px solid #C4A87C',
+            borderRadius: '2px 0 0 0'
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: '30px',
+            right: '30px',
+            width: '36px',
+            height: '36px',
+            borderTop: '2px solid #C4A87C',
+            borderRight: '2px solid #C4A87C',
+            borderRadius: '0 2px 0 0'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '30px',
+            left: '30px',
+            width: '36px',
+            height: '36px',
+            borderBottom: '2px solid #C4A87C',
+            borderLeft: '2px solid #C4A87C',
+            borderRadius: '0 0 0 2px'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '30px',
+            right: '30px',
+            width: '36px',
+            height: '36px',
+            borderBottom: '2px solid #C4A87C',
+            borderRight: '2px solid #C4A87C',
+            borderRadius: '0 0 2px 0'
+          }} />
+
+          {/* Decorative emblem */}
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            border: '2px solid #C4A87C',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '12px',
+            background: 'rgba(196, 168, 124, 0.08)'
+          }}>
+            <span style={{ fontSize: '28px' }}>✦</span>
+          </div>
 
           <p style={{
-            fontSize: '14px',
-            fontWeight: 600,
-            letterSpacing: '0.2em',
+            fontSize: '13px',
+            fontWeight: 400,
+            letterSpacing: '0.35em',
             textTransform: 'uppercase',
-            color: '#64748B',
-            margin: 0
+            color: '#8B7A5E',
+            margin: 0,
+            fontFamily: '"Georgia", "Times New Roman", serif'
           }}>
             Certificate of {certType}
           </p>
 
+          <div style={{
+            width: '80px',
+            height: '1px',
+            background: 'linear-gradient(to right, transparent, #C4A87C, transparent)',
+            margin: '6px auto 8px'
+          }} />
+
+          <p style={{
+            fontSize: '13px',
+            color: '#8B7A5E',
+            margin: 0,
+            fontStyle: 'italic',
+            letterSpacing: '0.05em'
+          }}>
+            This certifies that
+          </p>
+
           <h1 style={{
-            fontSize: '48px',
+            fontSize: '44px',
             fontWeight: 700,
-            color: '#0F172A',
-            margin: '8px 0 4px 0',
-            letterSpacing: '-0.02em'
+            color: '#2C2420',
+            margin: '4px 0 2px 0',
+            letterSpacing: '0.02em',
+            fontFamily: '"Georgia", "Times New Roman", serif'
           }}>
             {student.name}
           </h1>
 
           {student.department && (
-            <p style={{ fontSize: '16px', color: '#475569', margin: '0 0 4px 0' }}>
-              {student.department} {student.roll_number && `• ${student.roll_number}`}
+            <p style={{
+              fontSize: '15px',
+              color: '#5A4F45',
+              margin: '2px 0',
+              fontFamily: '"Georgia", "Times New Roman", serif',
+              fontStyle: 'italic'
+            }}>
+              {student.department}
+              {student.roll_number && ` · ${student.roll_number}`}
             </p>
           )}
 
-          <p style={{ fontSize: '18px', color: '#475569', margin: '8px 0 4px 0' }}>
+          {student.college_name && (
+            <p style={{
+              fontSize: '14px',
+              color: '#7A6F65',
+              margin: '0 0 4px 0',
+              fontFamily: '"Georgia", "Times New Roman", serif'
+            }}>
+              {student.college_name}
+            </p>
+          )}
+
+          <p style={{
+            fontSize: '15px',
+            color: '#5A4F45',
+            margin: '4px 0',
+            fontFamily: '"Georgia", "Times New Roman", serif'
+          }}>
             has {isAttended ? "attended" : "participated in"}
           </p>
 
           <h2 style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontWeight: 600,
-            color: '#0F172A',
-            margin: '4px 0'
+            color: '#2C2420',
+            margin: '2px 0',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            letterSpacing: '0.01em'
           }}>
             {event.title}
           </h2>
 
           {event.description && (
-            <p style={{ fontSize: '14px', color: '#64748B', margin: '4px 0', maxWidth: '500px' }}>
+            <p style={{
+              fontSize: '13px',
+              color: '#7A6F65',
+              margin: '4px 0 6px',
+              maxWidth: '550px',
+              fontFamily: '"Georgia", "Times New Roman", serif',
+              fontStyle: 'italic'
+            }}>
               {event.description}
             </p>
           )}
@@ -854,334 +976,476 @@ const CertificateTemplate = ({
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            fontSize: '14px',
-            color: '#64748B',
-            marginTop: '12px'
+            gap: '14px',
+            fontSize: '12px',
+            color: '#8B7A5E',
+            marginTop: '6px',
+            fontFamily: '"Georgia", "Times New Roman", serif'
           }}>
-            <span>{event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}</span>
-            <span style={{ width: '1px', height: '12px', backgroundColor: '#E5E7EB' }} />
             <span>{event.venue}</span>
-            <span style={{ width: '1px', height: '12px', backgroundColor: '#E5E7EB' }} />
-            <span>{new Date(event.start_time).toLocaleDateString()}</span>
+            <span style={{ width: '1px', height: '10px', backgroundColor: '#D4C9B8' }} />
+            <span>{event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}</span>
+            <span style={{ width: '1px', height: '10px', backgroundColor: '#D4C9B8' }} />
+            <span>{formatDate(event.start_time)}</span>
           </div>
 
           <div style={{
+            marginTop: '10px',
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            fontSize: '12px',
-            color: '#94A3B8',
-            marginTop: '12px'
+            gap: '20px',
+            fontSize: '10px',
+            color: '#B0A59A',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            letterSpacing: '0.05em'
           }}>
-            <span>Certificate #{student.id.slice(0, 8)}</span>
-            <span style={{ width: '1px', height: '10px', backgroundColor: '#E5E7EB' }} />
+            <span>Certificate ID: {student.id.slice(0, 8).toUpperCase()}</span>
+            <span style={{ width: '1px', height: '8px', backgroundColor: '#D4C9B8' }} />
             <span>Issued: {currentDate}</span>
           </div>
-
-          <div style={{ width: '40px', height: '1px', backgroundColor: '#111827', opacity: 0.2, marginTop: '16px' }} />
         </div>
 
-        <div style={{ height: '3px', background: 'linear-gradient(to right, transparent, rgba(17,24,39,0.3), transparent)' }} />
+        {/* Bottom decorative bar */}
+        <div style={{
+          height: '4px',
+          background: 'linear-gradient(to right, transparent, #C4A87C, transparent)',
+          position: 'relative',
+          zIndex: 1
+        }} />
       </div>
     );
   }
 
-  if (template === "modern") {
+  // ─── GOLD TEMPLATE ──────────────────────────────────────────────────────────
+  if (template === "gold") {
     return (
       <div style={{
-        width: '800px',
-        height: '565px',
-        backgroundColor: '#FFFFFF',
-        borderRadius: '8px',
-        border: '1px solid #E5E7EB',
+        width: '900px',
+        height: '636px',
+        backgroundColor: '#1A1A1A',
+        borderRadius: '12px',
+        border: '1px solid #C9A84C',
         overflow: 'hidden',
         position: 'relative',
         display: 'flex',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        flexDirection: 'column',
+        fontFamily: '"Georgia", "Times New Roman", serif',
+        boxShadow: '0 4px 30px rgba(201, 168, 76, 0.15)'
       }}>
-        {/* Left side - gradient background */}
+        {/* Gold border frame */}
         <div style={{
-          width: '280px',
-          background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '40px',
-          color: 'white',
-          position: 'relative'
-        }}>
-          {/* Decorative elements */}
-          <div style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            width: '100px',
-            height: '100px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.05)',
-          }} />
-          <div style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '20px',
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            background: 'rgba(255,255,255,0.03)',
-          }} />
-          
-          <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, letterSpacing: '0.2em', textTransform: 'uppercase', opacity: 0.7 }}>
-              Certificate
-            </div>
-            <div style={{ fontSize: '16px', fontWeight: 700, letterSpacing: '0.1em', marginTop: '4px', textTransform: 'uppercase' }}>
-              {certType}
-            </div>
-            <div style={{
-              width: '40px',
-              height: '1px',
-              backgroundColor: 'rgba(255,255,255,0.3)',
-              margin: '12px auto'
-            }} />
-            <div style={{ fontSize: '12px', opacity: 0.7 }}>
-              {new Date(event.start_time).toLocaleDateString()}
-            </div>
-          </div>
-        </div>
+          position: 'absolute',
+          inset: '10px',
+          border: '2px solid #C9A84C',
+          borderRadius: '8px',
+          pointerEvents: 'none',
+          opacity: 0.6
+        }} />
+        
+        <div style={{
+          position: 'absolute',
+          inset: '16px',
+          border: '1px solid rgba(201, 168, 76, 0.3)',
+          borderRadius: '4px',
+          pointerEvents: 'none'
+        }} />
 
-        {/* Right side - content */}
+        {/* Top gold bar */}
+        <div style={{
+          height: '5px',
+          background: 'linear-gradient(to right, transparent, #C9A84C, #F4D47C, #C9A84C, transparent)',
+          position: 'relative',
+          zIndex: 1
+        }} />
+
+        {/* Main content */}
         <div style={{
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '40px 50px',
-          textAlign: 'center'
+          padding: '30px 50px 25px',
+          textAlign: 'center',
+          position: 'relative',
+          zIndex: 1
         }}>
-          <p style={{ fontSize: '13px', fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#94A3B8', margin: 0 }}>
-            This certificate is awarded to
+          {/* Gold corner accents */}
+          <div style={{
+            position: 'absolute',
+            top: '28px',
+            left: '28px',
+            width: '30px',
+            height: '30px',
+            borderTop: '2px solid #C9A84C',
+            borderLeft: '2px solid #C9A84C',
+            borderRadius: '2px 0 0 0',
+            opacity: 0.7
+          }} />
+          <div style={{
+            position: 'absolute',
+            top: '28px',
+            right: '28px',
+            width: '30px',
+            height: '30px',
+            borderTop: '2px solid #C9A84C',
+            borderRight: '2px solid #C9A84C',
+            borderRadius: '0 2px 0 0',
+            opacity: 0.7
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '28px',
+            left: '28px',
+            width: '30px',
+            height: '30px',
+            borderBottom: '2px solid #C9A84C',
+            borderLeft: '2px solid #C9A84C',
+            borderRadius: '0 0 0 2px',
+            opacity: 0.7
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '28px',
+            right: '28px',
+            width: '30px',
+            height: '30px',
+            borderBottom: '2px solid #C9A84C',
+            borderRight: '2px solid #C9A84C',
+            borderRadius: '0 0 2px 0',
+            opacity: 0.7
+          }} />
+
+          {/* Gold emblem */}
+          <div style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            border: '2px solid #C9A84C',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginBottom: '14px',
+            background: 'rgba(201, 168, 76, 0.05)'
+          }}>
+            <span style={{ fontSize: '30px' }}>🏆</span>
+          </div>
+
+          <p style={{
+            fontSize: '12px',
+            fontWeight: 300,
+            letterSpacing: '0.4em',
+            textTransform: 'uppercase',
+            color: '#C9A84C',
+            margin: 0,
+            fontFamily: '"Georgia", "Times New Roman", serif'
+          }}>
+            Certificate of {certType}
+          </p>
+
+          <div style={{
+            width: '100px',
+            height: '1px',
+            background: 'linear-gradient(to right, transparent, #C9A84C, transparent)',
+            margin: '6px auto 10px'
+          }} />
+
+          <p style={{
+            fontSize: '13px',
+            color: '#C9A84C',
+            margin: 0,
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            letterSpacing: '0.1em'
+          }}>
+            This certifies that
           </p>
 
           <h1 style={{
-            fontSize: '44px',
+            fontSize: '48px',
             fontWeight: 700,
-            color: '#0F172A',
-            margin: '8px 0 4px 0',
-            letterSpacing: '-0.02em'
+            color: '#F4D47C',
+            margin: '4px 0 2px 0',
+            letterSpacing: '0.03em',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            textShadow: '0 0 30px rgba(201, 168, 76, 0.1)'
           }}>
             {student.name}
           </h1>
 
-          {student.roll_number && (
-            <p style={{ fontSize: '14px', color: '#64748B', fontFamily: 'monospace', margin: '0' }}>
-              ID: {student.roll_number}
+          {student.department && (
+            <p style={{
+              fontSize: '15px',
+              color: '#C9A84C',
+              margin: '2px 0',
+              fontFamily: '"Georgia", "Times New Roman", serif',
+              opacity: 0.8
+            }}>
+              {student.department}
+              {student.roll_number && ` · ${student.roll_number}`}
             </p>
           )}
 
-          <div style={{ width: '60px', height: '1px', backgroundColor: '#E5E7EB', margin: '12px 0' }} />
+          {student.college_name && (
+            <p style={{
+              fontSize: '14px',
+              color: '#A89060',
+              margin: '0 0 4px 0',
+              fontFamily: '"Georgia", "Times New Roman", serif'
+            }}>
+              {student.college_name}
+            </p>
+          )}
 
-          <p style={{ fontSize: '16px', color: '#475569', margin: '4px 0' }}>
-            for {isAttended ? "attending" : "participating in"}
+          <p style={{
+            fontSize: '15px',
+            color: '#C9A84C',
+            margin: '4px 0',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            opacity: 0.8
+          }}>
+            has {isAttended ? "attended" : "participated in"}
           </p>
 
           <h2 style={{
-            fontSize: '28px',
+            fontSize: '30px',
             fontWeight: 600,
-            color: '#0F172A',
-            margin: '4px 0'
+            color: '#F4D47C',
+            margin: '2px 0',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            letterSpacing: '0.02em'
           }}>
             {event.title}
           </h2>
 
-          {student.department && (
-            <p style={{ fontSize: '14px', color: '#64748B', margin: '4px 0' }}>
-              {student.department}
+          {event.description && (
+            <p style={{
+              fontSize: '13px',
+              color: '#A89060',
+              margin: '4px 0 6px',
+              maxWidth: '550px',
+              fontFamily: '"Georgia", "Times New Roman", serif',
+              fontStyle: 'italic'
+            }}>
+              {event.description}
             </p>
           )}
 
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            fontSize: '13px',
-            color: '#94A3B8',
-            marginTop: '12px'
+            gap: '14px',
+            fontSize: '12px',
+            color: '#A89060',
+            marginTop: '6px',
+            fontFamily: '"Georgia", "Times New Roman", serif'
           }}>
             <span>{event.venue}</span>
-            <span style={{ width: '1px', height: '10px', backgroundColor: '#E5E7EB' }} />
-            <span>{event.event_type}</span>
-            <span style={{ width: '1px', height: '10px', backgroundColor: '#E5E7EB' }} />
-            <span>Issued: {currentDate}</span>
+            <span style={{ width: '1px', height: '10px', backgroundColor: 'rgba(201, 168, 76, 0.3)' }} />
+            <span>{event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}</span>
+            <span style={{ width: '1px', height: '10px', backgroundColor: 'rgba(201, 168, 76, 0.3)' }} />
+            <span>{formatDate(event.start_time)}</span>
           </div>
 
           <div style={{
-            marginTop: '16px',
-            fontSize: '11px',
-            fontFamily: 'monospace',
-            color: '#CBD5E1'
+            marginTop: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '20px',
+            fontSize: '10px',
+            color: '#6A6050',
+            fontFamily: '"Georgia", "Times New Roman", serif',
+            letterSpacing: '0.05em'
           }}>
-            {student.id.slice(0, 12)}
+            <span>Certificate ID: {student.id.slice(0, 8).toUpperCase()}</span>
+            <span style={{ width: '1px', height: '8px', backgroundColor: 'rgba(201, 168, 76, 0.3)' }} />
+            <span>Issued: {currentDate}</span>
           </div>
         </div>
+
+        {/* Bottom gold bar */}
+        <div style={{
+          height: '5px',
+          background: 'linear-gradient(to right, transparent, #C9A84C, #F4D47C, #C9A84C, transparent)',
+          position: 'relative',
+          zIndex: 1
+        }} />
       </div>
     );
   }
 
-  // Premium Template (default)
+  // ─── MODERN TEMPLATE ──────────────────────────────────────────────────────
   return (
     <div style={{
-      width: '800px',
-      height: '565px',
+      width: '900px',
+      height: '636px',
       backgroundColor: '#FFFFFF',
-      borderRadius: '8px',
-      border: '1px solid #E5E7EB',
+      borderRadius: '12px',
+      border: '1px solid #E8ECF0',
       overflow: 'hidden',
       position: 'relative',
       display: 'flex',
-      flexDirection: 'column',
-      fontFamily: 'system-ui, -apple-system, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
     }}>
-      {/* Decorative border frames */}
+      {/* Left accent panel */}
       <div style={{
-        position: 'absolute',
-        inset: '8px',
-        border: '2px solid rgba(17,24,39,0.1)',
-        borderRadius: '4px',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute',
-        inset: '12px',
-        border: '1px solid rgba(17,24,39,0.05)',
-        borderRadius: '2px',
-        pointerEvents: 'none'
-      }} />
-
-      {/* Top decorative line */}
-      <div style={{
-        height: '4px',
-        background: 'linear-gradient(to right, #1E293B 0%, #475569 50%, #1E293B 100%)',
+        width: '220px',
+        background: 'linear-gradient(180deg, #0F172A 0%, #1E293B 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '30px',
+        color: 'white',
         position: 'relative',
-        zIndex: 1
-      }} />
+        flexShrink: 0
+      }}>
+        {/* Decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '30px',
+          right: '20px',
+          width: '80px',
+          height: '80px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.03)',
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '30px',
+          left: '20px',
+          width: '60px',
+          height: '60px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.02)',
+        }} />
+        
+        {/* Icon */}
+        <div style={{
+          width: '64px',
+          height: '64px',
+          borderRadius: '50%',
+          background: 'rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '14px',
+          position: 'relative',
+          zIndex: 1
+        }}>
+          <span style={{ fontSize: '30px' }}>📜</span>
+        </div>
 
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.3em',
+            textTransform: 'uppercase',
+            opacity: 0.6,
+            marginBottom: '4px'
+          }}>
+            Certificate
+          </div>
+          <div style={{
+            fontSize: '18px',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: '#FFFFFF',
+            marginBottom: '6px'
+          }}>
+            {certType}
+          </div>
+          <div style={{
+            width: '30px',
+            height: '1px',
+            backgroundColor: 'rgba(255,255,255,0.2)',
+            margin: '8px auto'
+          }} />
+          <div style={{
+            fontSize: '11px',
+            opacity: 0.5,
+            fontFamily: 'monospace'
+          }}>
+            #{student.id.slice(0, 8).toUpperCase()}
+          </div>
+          <div style={{
+            fontSize: '11px',
+            opacity: 0.4,
+            marginTop: '4px'
+          }}>
+            {formatDate(event.start_time)}
+          </div>
+        </div>
+      </div>
+
+      {/* Right content */}
       <div style={{
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '40px 60px',
+        padding: '30px 40px 25px',
         textAlign: 'center',
-        position: 'relative',
-        zIndex: 1
+        background: '#FFFFFF'
       }}>
-        {/* Decorative top-left corner */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          left: '20px',
-          width: '30px',
-          height: '30px',
-          borderTop: '2px solid rgba(17,24,39,0.1)',
-          borderLeft: '2px solid rgba(17,24,39,0.1)',
-          borderRadius: '2px 0 0 0'
-        }} />
-        
-        {/* Decorative top-right corner */}
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          width: '30px',
-          height: '30px',
-          borderTop: '2px solid rgba(17,24,39,0.1)',
-          borderRight: '2px solid rgba(17,24,39,0.1)',
-          borderRadius: '0 2px 0 0'
-        }} />
-
-        {/* Decorative bottom-left corner */}
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          left: '20px',
-          width: '30px',
-          height: '30px',
-          borderBottom: '2px solid rgba(17,24,39,0.1)',
-          borderLeft: '2px solid rgba(17,24,39,0.1)',
-          borderRadius: '0 0 0 2px'
-        }} />
-
-        {/* Decorative bottom-right corner */}
-        <div style={{
-          position: 'absolute',
-          bottom: '20px',
-          right: '20px',
-          width: '30px',
-          height: '30px',
-          borderBottom: '2px solid rgba(17,24,39,0.1)',
-          borderRight: '2px solid rgba(17,24,39,0.1)',
-          borderRadius: '0 0 2px 0'
-        }} />
-
-        {/* Badge icon */}
-        <div style={{
-          width: '48px',
-          height: '48px',
-          borderRadius: '50%',
-          backgroundColor: '#F1F5F9',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: '12px'
-        }}>
-          <span style={{ fontSize: '24px' }}>🏅</span>
-        </div>
-
         <p style={{
-          fontSize: '13px',
-          fontWeight: 600,
+          fontSize: '12px',
+          fontWeight: 500,
           letterSpacing: '0.15em',
           textTransform: 'uppercase',
-          color: '#64748B',
+          color: '#94A3B8',
           margin: 0
         }}>
-          Certificate of {certType}
+          Awarded to
         </p>
 
         <h1 style={{
           fontSize: '42px',
           fontWeight: 700,
           color: '#0F172A',
-          margin: '6px 0 2px 0',
+          margin: '4px 0 2px 0',
           letterSpacing: '-0.02em'
         }}>
           {student.name}
         </h1>
 
         {student.department && (
-          <p style={{ fontSize: '15px', color: '#475569', margin: '0 0 2px 0' }}>
+          <p style={{
+            fontSize: '14px',
+            color: '#475569',
+            margin: '2px 0',
+            fontWeight: 400
+          }}>
             {student.department}
+            {student.roll_number && ` · ${student.roll_number}`}
           </p>
         )}
 
-        {student.roll_number && (
-          <p style={{ fontSize: '13px', color: '#64748B', fontFamily: 'monospace', margin: '0 0 6px 0' }}>
-            Roll No: {student.roll_number}
+        {student.college_name && (
+          <p style={{
+            fontSize: '13px',
+            color: '#64748B',
+            margin: '0 0 4px 0'
+          }}>
+            {student.college_name}
           </p>
         )}
 
         <div style={{
-          width: '40px',
-          height: '1px',
-          backgroundColor: '#E5E7EB',
-          margin: '6px auto'
+          width: '50px',
+          height: '2px',
+          backgroundColor: '#E2E8F0',
+          margin: '8px auto'
         }} />
 
-        <p style={{ fontSize: '15px', color: '#475569', margin: '4px 0' }}>
+        <p style={{
+          fontSize: '14px',
+          color: '#475569',
+          margin: '4px 0'
+        }}>
           for {isAttended ? "attending" : "participating in"}
         </p>
 
@@ -1195,7 +1459,13 @@ const CertificateTemplate = ({
         </h2>
 
         {event.description && (
-          <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0', maxWidth: '500px' }}>
+          <p style={{
+            fontSize: '13px',
+            color: '#64748B',
+            margin: '4px 0 6px',
+            maxWidth: '480px',
+            lineHeight: 1.4
+          }}>
             {event.description}
           </p>
         )}
@@ -1203,39 +1473,46 @@ const CertificateTemplate = ({
         <div style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          fontSize: '13px',
+          gap: '12px',
+          fontSize: '12px',
           color: '#94A3B8',
-          marginTop: '10px'
+          marginTop: '6px'
         }}>
           <span>{event.venue}</span>
-          <span style={{ width: '1px', height: '10px', backgroundColor: '#E5E7EB' }} />
+          <span style={{ width: '1px', height: '10px', backgroundColor: '#E2E8F0' }} />
           <span>{event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1)}</span>
-          <span style={{ width: '1px', height: '10px', backgroundColor: '#E5E7EB' }} />
-          <span>{new Date(event.start_time).toLocaleDateString()}</span>
+          <span style={{ width: '1px', height: '10px', backgroundColor: '#E2E8F0' }} />
+          <span>{formatDate(event.start_time)}</span>
         </div>
 
         <div style={{
-          marginTop: '12px',
+          marginTop: '10px',
           display: 'flex',
           alignItems: 'center',
           gap: '16px',
-          fontSize: '11px',
-          color: '#CBD5E1'
+          fontSize: '10px',
+          color: '#CBD5E1',
+          fontFamily: 'monospace'
         }}>
-          <span>Certificate ID: {student.id.slice(0, 8)}</span>
-          <span style={{ width: '1px', height: '8px', backgroundColor: '#E5E7EB' }} />
           <span>Issued: {currentDate}</span>
+          <span style={{ width: '1px', height: '8px', backgroundColor: '#E2E8F0' }} />
+          <span>ID: {student.id.slice(0, 12)}</span>
+        </div>
+
+        {/* Bottom status indicator */}
+        <div style={{
+          marginTop: '12px',
+          padding: '4px 16px',
+          borderRadius: '20px',
+          backgroundColor: isAttended ? '#ECFDF5' : '#F1F5F9',
+          fontSize: '10px',
+          fontWeight: 500,
+          color: isAttended ? '#065F46' : '#475569',
+          letterSpacing: '0.05em'
+        }}>
+          {isAttended ? '✓ Attendance Confirmed' : '✓ Participation Confirmed'}
         </div>
       </div>
-
-      {/* Bottom decorative line */}
-      <div style={{
-        height: '3px',
-        background: 'linear-gradient(to right, transparent, rgba(17,24,39,0.2), transparent)',
-        position: 'relative',
-        zIndex: 1
-      }} />
     </div>
   );
 };
